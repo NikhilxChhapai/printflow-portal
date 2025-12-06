@@ -12,7 +12,7 @@ import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import PendingApproval from "./pages/PendingApproval";
 import Orders from "./pages/Orders";
-import CreateOrder from "./pages/CreateOrder";
+import Profile from "./pages/Profile";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -35,7 +35,7 @@ const App = () => (
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="pending" element={<PendingApproval />} />
                   <Route path="orders" element={<Orders />} />
-                  <Route path="create-order" element={<CreateOrder />} />
+                  <Route path="profile" element={<Profile />} />
                   <Route path="users" element={<Users />} />
                   <Route path="settings" element={<Settings />} />
                 </Route>

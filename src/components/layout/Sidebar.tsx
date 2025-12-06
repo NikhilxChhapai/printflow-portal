@@ -50,11 +50,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Package,
     },
     {
-      name: 'Create Order',
-      href: '/create-order',
-      icon: PlusCircle,
-    },
-    {
       name: 'Users',
       href: '/users',
       icon: Users,

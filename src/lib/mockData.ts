@@ -1,4 +1,4 @@
-import { User, Order, PendingWooOrder, OrderStage } from './types';
+import { User, Order, PendingWooOrder, PaymentStatus } from './types';
 
 // Helper to calculate days from now
 const daysFromNow = (days: number): string => {
@@ -20,6 +20,7 @@ export const mockUsers: User[] = [
     email: 'admin@printco.com',
     role: 'admin',
     department: 'Administration',
+    onLeave: false,
   },
   {
     id: 'user-2',
@@ -27,6 +28,7 @@ export const mockUsers: User[] = [
     email: 'sarah@printco.com',
     role: 'sales',
     department: 'Sales',
+    onLeave: false,
   },
   {
     id: 'user-3',
@@ -34,6 +36,7 @@ export const mockUsers: User[] = [
     email: 'mike@printco.com',
     role: 'sales',
     department: 'Sales',
+    onLeave: true,
   },
   {
     id: 'user-4',
@@ -41,6 +44,7 @@ export const mockUsers: User[] = [
     email: 'emma@printco.com',
     role: 'design',
     department: 'Design',
+    onLeave: false,
   },
   {
     id: 'user-5',
@@ -48,6 +52,15 @@ export const mockUsers: User[] = [
     email: 'james@printco.com',
     role: 'production',
     department: 'Production',
+    onLeave: false,
+  },
+  {
+    id: 'user-6',
+    name: 'Priya Patel',
+    email: 'priya@printco.com',
+    role: 'prepress',
+    department: 'Prepress',
+    onLeave: false,
   },
 ];
 
@@ -66,7 +79,7 @@ export const mockOrders: Order[] = [
     stage: 'printing',
     assignedTo: 'user-5',
     assignedToName: 'James Brown',
-    source: 'manual',
+    source: 'woocommerce',
     timeline: [
       {
         id: 'tl-1',
@@ -92,6 +105,8 @@ export const mockOrders: Order[] = [
     ],
     priority: 'high',
     remainingDays: 1,
+    paymentStatus: 'fully_paid',
+    department: 'Production',
   },
   {
     id: 'ord-2',
@@ -125,6 +140,8 @@ export const mockOrders: Order[] = [
     ],
     priority: 'medium',
     remainingDays: 4,
+    paymentStatus: 'partial_paid',
+    department: 'Design',
   },
   {
     id: 'ord-3',
@@ -138,9 +155,9 @@ export const mockOrders: Order[] = [
     receivedAt: daysAgo(1),
     notes: 'New customer',
     stage: 'sales_received',
-    assignedTo: 'user-2',
-    assignedToName: 'Sarah Johnson',
-    source: 'manual',
+    assignedTo: 'user-3',
+    assignedToName: 'Mike Chen',
+    source: 'woocommerce',
     timeline: [
       {
         id: 'tl-6',
@@ -152,6 +169,8 @@ export const mockOrders: Order[] = [
     ],
     priority: 'low',
     remainingDays: 7,
+    paymentStatus: 'pending',
+    department: 'Sales',
   },
   {
     id: 'ord-4',
@@ -167,7 +186,7 @@ export const mockOrders: Order[] = [
     stage: 'finishing',
     assignedTo: 'user-5',
     assignedToName: 'James Brown',
-    source: 'manual',
+    source: 'woocommerce',
     timeline: [
       {
         id: 'tl-7',
@@ -187,8 +206,8 @@ export const mockOrders: Order[] = [
         id: 'tl-9',
         stage: 'prepress',
         timestamp: daysAgo(3),
-        userId: 'user-4',
-        userName: 'Emma Wilson',
+        userId: 'user-6',
+        userName: 'Priya Patel',
       },
       {
         id: 'tl-10',
@@ -207,6 +226,51 @@ export const mockOrders: Order[] = [
     ],
     priority: 'high',
     remainingDays: 2,
+    paymentStatus: 'fully_paid',
+    department: 'Production',
+  },
+  {
+    id: 'ord-5',
+    orderId: 'ORD-2024-005',
+    clientName: 'Metro Events Co.',
+    products: [
+      { name: 'Event Banners 6x3ft', qty: 5 },
+      { name: 'Standee Display', qty: 10 },
+    ],
+    deliveryDate: daysFromNow(3),
+    receivedAt: daysAgo(2),
+    notes: '',
+    stage: 'prepress',
+    assignedTo: 'user-6',
+    assignedToName: 'Priya Patel',
+    source: 'woocommerce',
+    timeline: [
+      {
+        id: 'tl-12',
+        stage: 'sales_received',
+        timestamp: daysAgo(2),
+        userId: 'user-2',
+        userName: 'Sarah Johnson',
+      },
+      {
+        id: 'tl-13',
+        stage: 'design',
+        timestamp: daysAgo(1),
+        userId: 'user-4',
+        userName: 'Emma Wilson',
+      },
+      {
+        id: 'tl-14',
+        stage: 'prepress',
+        timestamp: daysAgo(0.5),
+        userId: 'user-6',
+        userName: 'Priya Patel',
+      },
+    ],
+    priority: 'medium',
+    remainingDays: 3,
+    paymentStatus: 'fully_paid',
+    department: 'Prepress',
   },
 ];
 
@@ -219,6 +283,8 @@ export const mockPendingWooOrders: PendingWooOrder[] = [
     ],
     receivedAt: daysAgo(1),
     source: 'woocommerce',
+    paymentStatus: 'fully_paid',
+    deliveryDate: daysFromNow(3),
   },
   {
     orderId: 'WOO-5002',
@@ -229,6 +295,8 @@ export const mockPendingWooOrders: PendingWooOrder[] = [
     ],
     receivedAt: daysAgo(2),
     source: 'woocommerce',
+    paymentStatus: 'partial_paid',
+    deliveryDate: daysFromNow(6),
   },
   {
     orderId: 'WOO-5003',
@@ -238,6 +306,8 @@ export const mockPendingWooOrders: PendingWooOrder[] = [
     ],
     receivedAt: new Date().toISOString(),
     source: 'woocommerce',
+    paymentStatus: 'pending',
+    deliveryDate: daysFromNow(1),
   },
 ];
 
@@ -250,26 +320,27 @@ export const getActivityFeed = () => [
   },
   {
     id: 'act-2',
-    message: 'New order ORD-2024-004 created',
+    message: 'New order ORD-2024-005 imported from WooCommerce',
     timestamp: daysAgo(0.5),
-    user: 'Mike Chen',
+    user: 'System',
   },
   {
     id: 'act-3',
+    message: 'Mike Chen is now on leave',
+    timestamp: daysAgo(0.8),
+    user: 'Admin User',
+    type: 'warning',
+  },
+  {
+    id: 'act-4',
     message: 'WooCommerce sync completed - 3 new orders',
     timestamp: daysAgo(1),
     user: 'System',
   },
   {
-    id: 'act-4',
+    id: 'act-5',
     message: 'Order ORD-2024-002 assigned to Emma Wilson',
     timestamp: daysAgo(1.5),
     user: 'Sarah Johnson',
-  },
-  {
-    id: 'act-5',
-    message: 'New user James Brown added to Production',
-    timestamp: daysAgo(2),
-    user: 'Admin User',
   },
 ];

@@ -1,5 +1,7 @@
 export type UserRole = 'admin' | 'sales' | 'design' | 'prepress' | 'production';
 
+export type PaymentStatus = 'fully_paid' | 'partial_paid' | 'pending';
+
 export interface User {
   id: string;
   name: string;
@@ -7,6 +9,7 @@ export interface User {
   role: UserRole;
   department: string;
   avatar?: string;
+  onLeave?: boolean;
 }
 
 export type OrderStage = 
@@ -51,6 +54,8 @@ export interface Order {
   timeline: TimelineEntry[];
   priority: Priority;
   remainingDays: number;
+  paymentStatus: PaymentStatus;
+  department: string;
 }
 
 export interface PendingWooOrder {
@@ -60,6 +65,8 @@ export interface PendingWooOrder {
   receivedAt: string;
   source: 'woocommerce';
   isDuplicate?: boolean;
+  paymentStatus: PaymentStatus;
+  deliveryDate?: string;
 }
 
 export interface WooCommerceSettings {
@@ -68,16 +75,16 @@ export interface WooCommerceSettings {
   consumerSecret: string;
 }
 
-export const ORDER_STAGES: { value: OrderStage; label: string }[] = [
-  { value: 'sales_received', label: 'Sales Received' },
-  { value: 'design', label: 'Design' },
-  { value: 'client_approval', label: 'Client Approval' },
-  { value: 'prepress', label: 'Prepress' },
-  { value: 'printing', label: 'Printing' },
-  { value: 'finishing', label: 'Finishing' },
-  { value: 'packing', label: 'Packing' },
-  { value: 'dispatch', label: 'Dispatch' },
-  { value: 'delivered', label: 'Delivered' },
+export const ORDER_STAGES: { value: OrderStage; label: string; department: string }[] = [
+  { value: 'sales_received', label: 'Sales Received', department: 'Sales' },
+  { value: 'design', label: 'Design', department: 'Design' },
+  { value: 'client_approval', label: 'Client Approval', department: 'Sales' },
+  { value: 'prepress', label: 'Prepress', department: 'Prepress' },
+  { value: 'printing', label: 'Printing', department: 'Production' },
+  { value: 'finishing', label: 'Finishing', department: 'Production' },
+  { value: 'packing', label: 'Packing', department: 'Production' },
+  { value: 'dispatch', label: 'Dispatch', department: 'Production' },
+  { value: 'delivered', label: 'Delivered', department: 'Sales' },
 ];
 
 export const STAGE_COLORS: Record<OrderStage, string> = {
@@ -90,4 +97,32 @@ export const STAGE_COLORS: Record<OrderStage, string> = {
   packing: 'bg-orange-500',
   dispatch: 'bg-teal-500',
   delivered: 'bg-green-500',
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  fully_paid: 'Fully Paid',
+  partial_paid: 'Partial Paid',
+  pending: 'Pending',
+};
+
+export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, { bg: string; text: string }> = {
+  fully_paid: { bg: 'bg-success/10', text: 'text-success' },
+  partial_paid: { bg: 'bg-warning/10', text: 'text-warning' },
+  pending: { bg: 'bg-destructive/10', text: 'text-destructive' },
+};
+
+export const DEPARTMENT_TO_ROLE: Record<string, UserRole> = {
+  'Sales': 'sales',
+  'Design': 'design',
+  'Prepress': 'prepress',
+  'Production': 'production',
+  'Administration': 'admin',
+};
+
+export const ROLE_TO_DEPARTMENT: Record<UserRole, string> = {
+  'sales': 'Sales',
+  'design': 'Design',
+  'prepress': 'Prepress',
+  'production': 'Production',
+  'admin': 'Administration',
 };
