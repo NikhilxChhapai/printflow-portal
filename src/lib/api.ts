@@ -85,6 +85,8 @@ export const createOrder = async (payload: {
   notes?: string;
   assignedTo?: string;
   assignedToName?: string;
+  paymentStatus?: 'fully_paid' | 'partial_paid' | 'pending';
+  department?: string;
 }): Promise<Order> => {
   await delay(NETWORK_DELAY);
   
@@ -97,7 +99,7 @@ export const createOrder = async (payload: {
     products: payload.products,
     deliveryDate: payload.deliveryDate,
     receivedAt: new Date().toISOString(),
-    notes: payload.notes,
+    notes: payload.notes || '',
     stage: 'sales_received',
     assignedTo: payload.assignedTo,
     assignedToName: payload.assignedToName,
@@ -107,12 +109,14 @@ export const createOrder = async (payload: {
         id: `tl-${Date.now()}`,
         stage: 'sales_received',
         timestamp: new Date().toISOString(),
-        userId: 'current-user', // TODO: Get from auth context
-        userName: 'Current User', // TODO: Get from auth context
+        userId: 'current-user',
+        userName: 'Current User',
       },
     ],
     priority,
     remainingDays,
+    paymentStatus: payload.paymentStatus || 'pending',
+    department: payload.department || 'Sales',
   };
 
   const orders = JSON.parse(localStorage.getItem('orders') || '[]');
@@ -260,6 +264,8 @@ export const approveWooOrder = async (
     ],
     priority,
     remainingDays,
+    paymentStatus: pendingOrder.paymentStatus || 'pending',
+    department: 'Sales',
   };
 
   // Add to orders

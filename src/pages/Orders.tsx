@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Filter, Package } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Filter, Package, LayoutGrid, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,11 +9,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { useOrders } from '@/contexts/OrderContext';
 import OrderCard from '@/components/orders/OrderCard';
+import OrderTableRow from '@/components/orders/OrderTableRow';
 import OrderDetail from '@/components/orders/OrderDetail';
-import { Order, ORDER_STAGES, OrderStage, Priority } from '@/lib/types';
+import { Order, ORDER_STAGES, OrderStage, Priority, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import * as api from '@/lib/api';
+
+type ViewMode = 'card' | 'table';
 
 const Orders: React.FC = () => {
   const { orders, isLoading } = useOrders();
@@ -21,17 +32,47 @@ const Orders: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [stageFilter, setStageFilter] = useState<OrderStage | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    return (localStorage.getItem('ordersViewMode') as ViewMode) || 'card';
+  });
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      const data = await api.fetchUsers();
+      setUsers(data);
+    };
+    loadUsers();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('ordersViewMode', viewMode);
+  }, [viewMode]);
+
+  // Check if assigned user is on leave
+  const getUserOnLeaveStatus = (assignedTo?: string): boolean => {
+    if (!assignedTo) return false;
+    const user = users.find(u => u.id === assignedTo);
+    return user?.onLeave || false;
+  };
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
+      const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
-        order.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.clientName.toLowerCase().includes(searchQuery.toLowerCase());
+        order.orderId.toLowerCase().includes(searchLower) ||
+        order.clientName.toLowerCase().includes(searchLower) ||
+        order.products.some(p => p.name.toLowerCase().includes(searchLower));
       const matchesStage = stageFilter === 'all' || order.stage === stageFilter;
       const matchesPriority = priorityFilter === 'all' || order.priority === priorityFilter;
       return matchesSearch && matchesStage && matchesPriority;
     });
   }, [orders, searchQuery, stageFilter, priorityFilter]);
+
+  // Sort by delivery date (closest first)
+  const sortedOrders = useMemo(() => {
+    return [...filteredOrders].sort((a, b) => a.remainingDays - b.remainingDays);
+  }, [filteredOrders]);
 
   // Find the updated order when orders change
   const currentSelectedOrder = selectedOrder 
@@ -42,11 +83,35 @@ const Orders: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Orders</h1>
-          <p className="text-muted-foreground">
-            Manage and track all orders
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Orders</h1>
+            <p className="text-muted-foreground">
+              Manage and track all orders ({sortedOrders.length})
+            </p>
+          </div>
+          
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+            <Button
+              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8"
+              onClick={() => setViewMode('card')}
+            >
+              <LayoutGrid className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Cards</span>
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8"
+              onClick={() => setViewMode('table')}
+            >
+              <List className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Table</span>
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -55,7 +120,7 @@ const Orders: React.FC = () => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search orders..."
+              placeholder="Search by order #, client, or product..."
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -104,26 +169,32 @@ const Orders: React.FC = () => {
         </div>
       </div>
 
-      {/* Orders Grid */}
+      {/* Orders Display */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />
-          ))}
-        </div>
-      ) : filteredOrders.length === 0 ? (
+        viewMode === 'card' ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border bg-card">
+            <div className="h-64 animate-pulse bg-muted" />
+          </div>
+        )
+      ) : sortedOrders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16">
           <Package className="h-16 w-16 text-muted-foreground/50 mb-4" />
           <h3 className="text-lg font-medium text-foreground">No orders found</h3>
           <p className="text-muted-foreground mt-1">
             {searchQuery || stageFilter !== 'all' || priorityFilter !== 'all'
               ? 'Try adjusting your filters'
-              : 'Create your first order to get started'}
+              : 'Orders will appear here when imported from WooCommerce'}
           </p>
         </div>
-      ) : (
+      ) : viewMode === 'card' ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredOrders.map((order, index) => (
+          {sortedOrders.map((order, index) => (
             <div
               key={order.id}
               style={{ animationDelay: `${index * 50}ms` }}
@@ -132,9 +203,40 @@ const Orders: React.FC = () => {
               <OrderCard
                 order={order}
                 onClick={() => setSelectedOrder(order)}
+                assignedUserOnLeave={getUserOnLeaveStatus(order.assignedTo)}
               />
             </div>
           ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Products</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Delivery</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Stage</TableHead>
+                  <TableHead>Assigned To</TableHead>
+                  <TableHead>Priority</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedOrders.map((order) => (
+                  <OrderTableRow
+                    key={order.id}
+                    order={order}
+                    onClick={() => setSelectedOrder(order)}
+                    assignedUserOnLeave={getUserOnLeaveStatus(order.assignedTo)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 
@@ -143,6 +245,7 @@ const Orders: React.FC = () => {
         <OrderDetail
           order={currentSelectedOrder}
           onClose={() => setSelectedOrder(null)}
+          users={users}
         />
       )}
     </div>

@@ -1,19 +1,27 @@
 import React from 'react';
-import { Calendar, User, Package } from 'lucide-react';
+import { Calendar, User, Package, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Order, ORDER_STAGES, STAGE_COLORS } from '@/lib/types';
+import { 
+  Order, 
+  ORDER_STAGES, 
+  STAGE_COLORS, 
+  PAYMENT_STATUS_LABELS, 
+  PAYMENT_STATUS_COLORS 
+} from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 interface OrderCardProps {
   order: Order;
   onClick: () => void;
+  assignedUserOnLeave?: boolean;
 }
 
-const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ order, onClick, assignedUserOnLeave = false }) => {
   const stageLabel = ORDER_STAGES.find(s => s.value === order.stage)?.label || order.stage;
   const stageColor = STAGE_COLORS[order.stage];
+  const paymentColors = PAYMENT_STATUS_COLORS[order.paymentStatus];
 
   return (
     <Card
@@ -25,15 +33,18 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
       )}
       onClick={onClick}
     >
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-4">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {/* Header */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <h3 className="font-semibold text-foreground">{order.orderId}</h3>
               {order.source === 'woocommerce' && (
                 <Badge variant="secondary" className="text-xs">WC</Badge>
               )}
+              <Badge className={cn('text-xs', paymentColors.bg, paymentColors.text)}>
+                {PAYMENT_STATUS_LABELS[order.paymentStatus]}
+              </Badge>
             </div>
 
             {/* Client */}
@@ -68,15 +79,28 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
           </div>
         </div>
 
+        {/* Assigned User On Leave Warning */}
+        {assignedUserOnLeave && (
+          <div className="mt-3 p-2 rounded-lg bg-destructive/10 border border-destructive/20">
+            <div className="flex items-center gap-2 text-xs text-destructive">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span>Assigned user on leave</span>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50 flex-wrap gap-2">
           {/* Stage badge */}
-          <Badge className={cn('text-xs text-white', stageColor)}>
-            {stageLabel}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={cn('text-xs text-white', stageColor)}>
+              {stageLabel}
+            </Badge>
+            <span className="text-xs text-muted-foreground">{order.department}</span>
+          </div>
 
           {/* Meta info */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {format(new Date(order.deliveryDate), 'MMM d')}
